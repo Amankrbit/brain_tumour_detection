@@ -100,3 +100,6 @@ Move from 2D MRI slices to 3D volumetric (NIfTI) data using 3D CNNs.
 ### Note to Evaluators
 
 This repository represents the practical implementation of my Master's thesis research. For detailed methodology, refer to the thesis document.
+website link - https://braintumordetection-784saauwdu5csnffqrtzdb.streamlit.app/
+
+
