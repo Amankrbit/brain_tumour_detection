@@ -79,24 +79,32 @@ st.markdown("""
         margin-bottom: 10px;
     }
     
-    /* Futuristic Neon Buttons */
-    div.stButton > button:first-child {
-        background: rgba(15, 23, 42, 0.6);
-        color: #38bdf8;
-        border: 1px solid rgba(56, 189, 248, 0.4);
-        border-radius: 10px;
-        padding: 0.5rem 1rem;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        backdrop-filter: blur(5px);
-        font-weight: 500;
-        letter-spacing: 0.5px;
+    /* BULLETPROOF NEON BUTTONS (Fixes the hover text issue) */
+    div[data-testid="stButton"] > button {
+        background: rgba(15, 23, 42, 0.6) !important;
+        color: #38bdf8 !important;
+        border: 1px solid rgba(56, 189, 248, 0.4) !important;
+        border-radius: 10px !important;
+        padding: 0.5rem 1rem !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        backdrop-filter: blur(5px) !important;
     }
-    div.stButton > button:first-child:hover {
-        background: rgba(56, 189, 248, 0.1);
-        border-color: #38bdf8;
-        color: #ffffff;
-        box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
-        transform: translateY(-3px);
+    div[data-testid="stButton"] > button p {
+        font-weight: 500 !important;
+        letter-spacing: 0.5px !important;
+        color: #38bdf8 !important; /* Force text to be cyan normally */
+        transition: all 0.3s ease !important;
+    }
+    /* Button Hover State */
+    div[data-testid="stButton"] > button:hover {
+        background: rgba(56, 189, 248, 0.15) !important;
+        border-color: #38bdf8 !important;
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.5) !important;
+        transform: translateY(-3px) !important;
+    }
+    /* Force text inside button to turn white on hover */
+    div[data-testid="stButton"] > button:hover p {
+        color: #ffffff !important; 
     }
     
     /* Sleek Chat Input Box */
