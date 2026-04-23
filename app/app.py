@@ -5,7 +5,7 @@ import cv2
 import streamlit as st
 import tensorflow as tf
 from PIL import Image
-from groq import Groq  # Make sure 'groq' is in your requirements.txt
+from groq import Groq  
 
 # --- 1. SYSTEM PATH SETUP ---
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -21,7 +21,6 @@ from src.metrics import make_gradcam_heatmap, generate_gradcam_overlay
 # --- 2. FAIL-PROOF MODEL DOWNLOADER ---
 @st.cache_resource
 def get_model():
-    # REPLACE THIS with the link you copied from GitHub Releases
     model_url = "https://github.com/Amankrbit/brain_tumour_detection/releases/download/v1.0/advanced_densenet.keras"
     
     with st.spinner("Downloading AI Model... This only happens on the first run."):
@@ -68,7 +67,6 @@ if uploaded_file:
         # Get results
         idx = np.argmax(predictions)
         label = CLASS_NAMES[idx].capitalize()
-        # Fix formatting for 'No_tumor' to read cleanly
         if label == "No_tumor":
             label = "No Tumor"
             
@@ -103,7 +101,6 @@ if uploaded_file:
     st.markdown("---")
     st.markdown(f"### 💬 Ask the AI Assistant about {label}")
     
-    # 6a. Dynamic Suggested Questions based on the label
     st.markdown("**💡 Not sure what to ask? Try one of these:**")
     
     if label == "Glioma":
@@ -112,39 +109,35 @@ if uploaded_file:
         st.info("• Are Meningiomas usually benign or malignant?\n• Will a Meningioma always require brain surgery?\n• What are the common symptoms associated with this tumor?")
     elif label == "Pituitary":
         st.info("• How does a Pituitary tumor affect the body's hormones?\n• What non-surgical treatments exist for Pituitary tumors?\n• Can this type of tumor cause vision problems?")
-    else: # No Tumor
+    else: 
         st.info("• If my MRI is clear, what else could be causing my headaches?\n• Should I still follow up with a neurologist?\n• How reliable is this AI at detecting early-stage tumors?")
 
-    # 6b. Initialize the Groq client securely using Streamlit Secrets
+    # 6b. Initialize the Groq client securely
     try:
-        client = Groq(api_key=st.secrets["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"])
+        if "GROQ_API_KEY" not in st.secrets:
+            st.error("🚨 Error: Streamlit cannot find 'GROQ_API_KEY' in your secrets.")
+            client = None
+        else:
+            client = Groq(api_key=st.secrets["GROQ_API_KEY"])
     except Exception as e:
-        st.warning("Please add your GROQ_API_KEY to the Streamlit Secrets to enable the chatbot.")
+        st.error(f"🚨 Groq Initialization Error: {e}")
         client = None
 
     if client:
-        # Initialize chat history in Streamlit's session state
         if "messages" not in st.session_state:
             st.session_state.messages = []
 
-        # Display previous chat history
         for message in st.session_state.messages:
-            # We don't want to display the hidden system prompt to the user
             if message["role"] != "system":
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
 
-        # Accept user input
         if prompt := st.chat_input("Type your question here..."):
-            
-            # Display user message in chat message container
             with st.chat_message("user"):
                 st.markdown(prompt)
             
-            # Add user message to chat history
             st.session_state.messages.append({"role": "user", "content": prompt})
 
-            # Inject the DenseNet prediction context behind the scenes
             system_context = f"""
             You are a highly professional neuro-oncology AI assistant. 
             The patient's MRI scan was just analyzed by our DenseNet deep learning model and the diagnosis is: {label} with a confidence of {conf:.2f}%.
@@ -153,13 +146,10 @@ if uploaded_file:
             Always include a brief disclaimer to consult a certified neurologist or oncologist for definitive medical advice.
             """
             
-            # Prepare the full message payload for Groq
             api_messages = [{"role": "system", "content": system_context}] + st.session_state.messages
 
-            # Request the answer from Groq
             with st.chat_message("assistant"):
                 message_placeholder = st.empty()
-                
                 try:
                     with st.spinner("Thinking..."):
                         response = client.chat.completions.create(
@@ -170,8 +160,6 @@ if uploaded_file:
                     
                     assistant_response = response.choices[0].message.content
                     message_placeholder.markdown(assistant_response)
-                    
-                    # Save the AI's response to history
                     st.session_state.messages.append({"role": "assistant", "content": assistant_response})
                     
                 except Exception as e:
