@@ -97,22 +97,11 @@ if uploaded_file:
         **Clinical Value:** This Explainable AI feature allows radiologists to verify that the model is looking at the actual tumor site rather than image artifacts (like skull markers or text).
         """) 
 
-    # --- 6. AI MEDICAL ASSISTANT CHATBOT (GROQ) ---
+  # --- 6. AI MEDICAL ASSISTANT CHATBOT (GROQ) ---
     st.markdown("---")
     st.markdown(f"### 💬 Ask the AI Assistant about {label}")
-    
-    st.markdown("**💡 Not sure what to ask? Try one of these:**")
-    
-    if label == "Glioma":
-        st.info("• What exactly is a Glioma?\n• What are the standard treatment options for this type of tumor?\n• How fast do Gliomas typically grow?")
-    elif label == "Meningioma":
-        st.info("• Are Meningiomas usually benign or malignant?\n• Will a Meningioma always require brain surgery?\n• What are the common symptoms associated with this tumor?")
-    elif label == "Pituitary":
-        st.info("• How does a Pituitary tumor affect the body's hormones?\n• What non-surgical treatments exist for Pituitary tumors?\n• Can this type of tumor cause vision problems?")
-    else: 
-        st.info("• If my MRI is clear, what else could be causing my headaches?\n• Should I still follow up with a neurologist?\n• How reliable is this AI at detecting early-stage tumors?")
 
-    # 6b. Initialize the Groq client securely
+    # Initialize the Groq client securely
     try:
         if "GROQ_API_KEY" not in st.secrets:
             st.error("🚨 Error: Streamlit cannot find 'GROQ_API_KEY' in your secrets.")
@@ -124,26 +113,41 @@ if uploaded_file:
         client = None
 
     if client:
+        # 1. Initialize states for infinite memory and continuous suggestions
         if "messages" not in st.session_state:
             st.session_state.messages = []
+            
+        if "suggestions" not in st.session_state:
+            # Seed the VERY FIRST set of questions based on the MRI diagnosis
+            if label == "Glioma":
+                st.session_state.suggestions = ["What exactly is a Glioma?", "What are the standard treatment options?", "How fast do Gliomas typically grow?"]
+            elif label == "Meningioma":
+                st.session_state.suggestions = ["Are Meningiomas usually benign or malignant?", "Will a Meningioma always require brain surgery?", "What are the common symptoms?"]
+            elif label == "Pituitary":
+                st.session_state.suggestions = ["How does a Pituitary tumor affect hormones?", "What non-surgical treatments exist?", "Can this cause vision problems?"]
+            else: 
+                st.session_state.suggestions = ["If my MRI is clear, what else could be causing my headaches?", "Should I still follow up with a neurologist?", "How reliable is this AI at detecting early-stage tumors?"]
 
+        # 2. Display previous chat history
         for message in st.session_state.messages:
             if message["role"] != "system":
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
 
-        if prompt := st.chat_input("Type your question here..."):
-            with st.chat_message("user"):
-                st.markdown(prompt)
+        # 3. Check if it's the AI's turn to respond
+        if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
             
-            st.session_state.messages.append({"role": "user", "content": prompt})
-
+            # --- PROMPT ENGINEERING MAGIC ---
+            # We explicitly order the AI to generate follow-up questions wrapped in secret tags
             system_context = f"""
             You are a highly professional neuro-oncology AI assistant. 
             The patient's MRI scan was just analyzed by our DenseNet deep learning model and the diagnosis is: {label} with a confidence of {conf:.2f}%.
             Answer the user's questions accurately, empathetically, and concisely based on this specific diagnosis.
-            If the user asks about the reliability of the AI, explain that while it is highly accurate, it is a supportive tool.
-            Always include a brief disclaimer to consult a certified neurologist or oncologist for definitive medical advice.
+            
+            CRITICAL INSTRUCTION: At the very end of your response, you MUST generate 3 highly relevant follow-up questions the user might want to ask next based on your answer. 
+            Wrap these 3 questions in a <suggestions> tag and separate them with a pipeline character (|). 
+            Example format exactly like this:
+            <suggestions>Question 1?|Question 2?|Question 3?</suggestions>
             """
             
             api_messages = [{"role": "system", "content": system_context}] + st.session_state.messages
@@ -158,9 +162,42 @@ if uploaded_file:
                             stream=False
                         )
                     
-                    assistant_response = response.choices[0].message.content
-                    message_placeholder.markdown(assistant_response)
-                    st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+                    raw_response = response.choices[0].message.content
+                    
+                    # Parse the secret suggestions out of the AI's response using Python
+                    if "<suggestions>" in raw_response and "</suggestions>" in raw_response:
+                        display_text = raw_response.split("<suggestions>")[0].strip()
+                        sugg_text = raw_response.split("<suggestions>")[1].split("</suggestions>")[0]
+                        new_suggestions = [s.strip() for s in sugg_text.split("|") if s.strip()]
+                    else:
+                        display_text = raw_response
+                        new_suggestions = [] # Fallback if AI forgets
+                        
+                    message_placeholder.markdown(display_text)
+                    
+                    # Update memory and trigger a UI refresh!
+                    st.session_state.messages.append({"role": "assistant", "content": display_text})
+                    st.session_state.suggestions = new_suggestions
+                    st.rerun() 
                     
                 except Exception as e:
+                    st.error(f"Chatbot encountered an error: {e}")
+
+        # 4. Display the clickable buttons and text input (Waiting for user)
+        if not st.session_state.messages or st.session_state.messages[-1]["role"] == "assistant":
+            
+            # Render the continuous dynamic buttons
+            if st.session_state.suggestions:
+                st.markdown("**💡 Suggested Follow-up Questions:**")
+                for i, sugg in enumerate(st.session_state.suggestions):
+                    # We use unique keys to prevent Streamlit button errors
+                    if st.button(sugg, key=f"btn_{len(st.session_state.messages)}_{i}"):
+                        # Act as if the user typed this question
+                        st.session_state.messages.append({"role": "user", "content": sugg})
+                        st.rerun()
+            
+            # Allow the user to ignore the buttons and type manually
+            if prompt := st.chat_input("Or type your own question here..."):
+                st.session_state.messages.append({"role": "user", "content": prompt})
+                st.rerun()
                     st.error(f"Chatbot encountered an error: {e}")
