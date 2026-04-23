@@ -21,7 +21,7 @@ from src.metrics import make_gradcam_heatmap, generate_gradcam_overlay
 @st.cache_resource
 def get_model():
     # REPLACE THIS with the link you copied from GitHub Releases in Step 1!
-    model_url = "https://github.com/222000rohitkumar/brain_tumor_detection/releases/download/v1.0/advanced_densenet.keras"
+    model_url = "https://github.com/Amankrbit/brain_tumour_detection/releases/download/v1.0/advanced_densenet.keras"
     
     with st.spinner("Downloading AI Model... This only happens on the first run."):
         # tf.keras.utils.get_file handles the /tmp folder and downloading safely!
