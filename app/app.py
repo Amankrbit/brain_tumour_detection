@@ -31,72 +31,120 @@ def get_model():
         
     return load_trained_model(model_path)
 
-# --- 3. APP UI SETUP ---
-st.set_page_config(page_title="Brain Tumor AI", layout="wide")
+# --- 3. APP UI & PRO CSS SETUP ---
+st.set_page_config(page_title="Brain Tumor AI", layout="wide", initial_sidebar_state="collapsed")
 
-# --- CUSTOM DEVELOPER DARK MODE CSS ---
+# 🎨 THE CYBER-MEDICAL GLASSMORPHISM THEME 🎨
 st.markdown("""
 <style>
-    /* Main background */
+    /* Deep gradient background */
     .stApp {
-        background-color: #0d1117;
-        color: #f0f6fc;
+        background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+        color: #e2e8f0;
     }
     
-    /* Sleek developer buttons */
+    /* Hide top header bar for a cleaner app feel */
+    header {visibility: hidden;}
+    
+    /* Premium Gradient Title */
+    h1 {
+        background: -webkit-linear-gradient(45deg, #38bdf8, #818cf8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800 !important;
+        letter-spacing: -1px;
+        padding-bottom: 10px;
+    }
+    h2, h3 { color: #f8fafc !important; font-weight: 600 !important; }
+    
+    /* Floating Image Cards */
+    [data-testid="stImage"] {
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+    [data-testid="stImage"]:hover {
+        transform: scale(1.02);
+    }
+    
+    /* Glassmorphism Chat Bubbles */
+    [data-testid="stChatMessage"] {
+        background-color: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 15px;
+        backdrop-filter: blur(10px);
+        margin-bottom: 10px;
+    }
+    
+    /* Futuristic Neon Buttons */
     div.stButton > button:first-child {
-        background-color: #161b22;
-        color: #a855f7;
-        border: 1px solid #30363d;
-        border-radius: 0.375rem;
+        background: rgba(15, 23, 42, 0.6);
+        color: #38bdf8;
+        border: 1px solid rgba(56, 189, 248, 0.4);
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(5px);
         font-weight: 500;
-        transition: all 0.3s ease-in-out;
+        letter-spacing: 0.5px;
     }
-    
-    /* Button Hover State */
     div.stButton > button:first-child:hover {
-        background-color: #a855f7;
+        background: rgba(56, 189, 248, 0.1);
+        border-color: #38bdf8;
         color: #ffffff;
-        border: 1px solid #a855f7;
-        box-shadow: 0px 4px 6px rgba(168, 85, 247, 0.2);
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+        transform: translateY(-3px);
     }
     
-    /* Chat input box styling */
+    /* Sleek Chat Input Box */
     .stChatInputContainer {
-        border-radius: 0.375rem;
-        border: 1px solid #30363d !important;
-        background-color: #161b22 !important;
+        background: rgba(15, 23, 42, 0.9) !important;
+        border: 1px solid rgba(129, 140, 248, 0.5) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        padding: 5px;
+    }
+    
+    /* Styled Alert Boxes */
+    .stAlert {
+        border-radius: 12px;
+        backdrop-filter: blur(5px);
+    }
+    div[data-testid="stAlert"]:has(.st-emotion-cache-1n7c1ee) { /* Success box */
+        background-color: rgba(16, 185, 129, 0.1);
+        border-left: 4px solid #10b981;
+        color: #d1fae5;
+    }
+    div[data-testid="stAlert"]:has(.st-emotion-cache-121r7m3) { /* Info box */
+        background-color: rgba(56, 189, 248, 0.1);
+        border-left: 4px solid #38bdf8;
+        color: #e0f2fe;
     }
 
-    /* Expander styling (How AI made its decision) */
+    /* Expander Styling */
     .streamlit-expanderHeader {
-        background-color: #161b22;
-        border-radius: 0.375rem;
-        color: #a855f7 !important;
-        font-weight: 600;
-        border: 1px solid #30363d;
+        background: rgba(30, 41, 59, 0.4);
+        border-radius: 12px;
+        color: #818cf8 !important;
+    }
+    div[data-testid="stExpander"] {
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        background: rgba(15, 23, 42, 0.3);
     }
     
-    /* Headers (Light blue-white for readability) */
-    h1, h2, h3, h4, h5, h6 {
-        color: #f0f6fc !important;
-    }
-    
-    /* Highlighted text (GitHub blue) */
+    /* Neon highlights for bold text */
     strong {
-        color: #58a6ff;
-    }
-    
-    /* Warning/Info boxes */
-    .stAlert {
-        border-radius: 0.375rem;
-        background-color: #161b22;
-        border: 1px solid #30363d;
+        color: #38bdf8;
+        text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
     }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🧠 Brain Tumor Diagnostic Assistant with Explainable AI")
+st.title("🧠 Brain Tumor AI Diagnostics")
 
 st.markdown("""
 Upload a Brain MRI scan. The AI will classify the tumor type and generate a **Grad-CAM heatmap** to highlight the specific region of the brain that influenced its decision.
@@ -157,12 +205,12 @@ if uploaded_file:
         * 🔴 **Red/Yellow Regions:** High importance. These are the specific biological textures and shapes the AI heavily relied on to make its diagnosis.
         * 🔵 **Blue Regions:** Low importance. The AI ignored these areas.
         
-        **Clinical Value:** This Explainable AI feature allows radiologists to verify that the model is looking at the actual tumor site rather than image artifacts (like skull markers or text).
+        **Clinical Value:** This Explainable AI feature allows radiologists to verify that the model is looking at the actual tumor site rather than image artifacts.
         """) 
 
     # --- 6. AI MEDICAL ASSISTANT CHATBOT (GROQ) ---
     st.markdown("---")
-    st.markdown(f"### 💬 Ask the AI Assistant about {label}")
+    st.markdown(f"### 💬 AI Clinical Assistant")
 
     # Initialize the Groq client securely
     try:
@@ -217,7 +265,7 @@ if uploaded_file:
             with st.chat_message("assistant"):
                 message_placeholder = st.empty()
                 try:
-                    with st.spinner("Thinking..."):
+                    with st.spinner("Analyzing clinical data..."):
                         response = client.chat.completions.create(
                             model="llama-3.1-8b-instant",
                             messages=api_messages,
@@ -250,15 +298,14 @@ if uploaded_file:
             
             # Render the continuous dynamic buttons
             if st.session_state.suggestions:
-                st.markdown("**💡 Suggested Follow-up Questions:**")
+                st.markdown("**💡 Suggested Inquiries:**")
+                # Create columns so the buttons sit nicely side-by-side if there's room
                 for i, sugg in enumerate(st.session_state.suggestions):
-                    # We use unique keys to prevent Streamlit button errors
-                    if st.button(sugg, key=f"btn_{len(st.session_state.messages)}_{i}"):
-                        # Act as if the user typed this question
+                    if st.button(sugg, key=f"btn_{len(st.session_state.messages)}_{i}", use_container_width=True):
                         st.session_state.messages.append({"role": "user", "content": sugg})
                         st.rerun()
             
             # Allow the user to ignore the buttons and type manually
-            if prompt := st.chat_input("Or type your own question here..."):
+            if prompt := st.chat_input("Or type your own medical inquiry here..."):
                 st.session_state.messages.append({"role": "user", "content": prompt})
                 st.rerun()
