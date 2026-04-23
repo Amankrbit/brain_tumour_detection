@@ -69,17 +69,42 @@ st.markdown("""
         transform: scale(1.02);
     }
     
-    /* Glassmorphism Chat Bubbles */
+    /* ---------------------------------------------------
+       CHAT BUBBLE FIX: Force all text inside to be bright white
+       --------------------------------------------------- */
     [data-testid="stChatMessage"] {
-        background-color: rgba(30, 41, 59, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 16px;
-        padding: 15px;
-        backdrop-filter: blur(10px);
-        margin-bottom: 10px;
+        background-color: rgba(30, 41, 59, 0.5) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        border-radius: 16px !important;
+        padding: 15px !important;
+        backdrop-filter: blur(10px) !important;
+        margin-bottom: 10px !important;
+    }
+    [data-testid="stChatMessage"] * {
+        color: #ffffff !important; /* Forces AI text and bullet points to be white */
     }
     
-    /* BULLETPROOF NEON BUTTONS (Fixes the hover text issue) */
+    /* ---------------------------------------------------
+       CHAT INPUT FIX: Remove the ugly white box at the bottom
+       --------------------------------------------------- */
+    [data-testid="stBottom"] > div {
+        background: transparent !important; /* Removes the white sticky block */
+    }
+    [data-testid="stChatInput"] {
+        background: rgba(15, 23, 42, 0.9) !important;
+        border: 1px solid rgba(56, 189, 248, 0.4) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
+    }
+    [data-testid="stChatInput"] textarea {
+        color: #ffffff !important; /* White typing text */
+        caret-color: #38bdf8 !important; /* Cyan cursor */
+    }
+    [data-testid="stChatInputSubmit"] svg {
+        fill: #38bdf8 !important; /* Make the send arrow cyan */
+    }
+    
+    /* Futuristic Neon Buttons */
     div[data-testid="stButton"] > button {
         background: rgba(15, 23, 42, 0.6) !important;
         color: #38bdf8 !important;
@@ -92,28 +117,17 @@ st.markdown("""
     div[data-testid="stButton"] > button p {
         font-weight: 500 !important;
         letter-spacing: 0.5px !important;
-        color: #38bdf8 !important; /* Force text to be cyan normally */
+        color: #38bdf8 !important;
         transition: all 0.3s ease !important;
     }
-    /* Button Hover State */
     div[data-testid="stButton"] > button:hover {
         background: rgba(56, 189, 248, 0.15) !important;
         border-color: #38bdf8 !important;
         box-shadow: 0 0 20px rgba(56, 189, 248, 0.5) !important;
         transform: translateY(-3px) !important;
     }
-    /* Force text inside button to turn white on hover */
     div[data-testid="stButton"] > button:hover p {
         color: #ffffff !important; 
-    }
-    
-    /* Sleek Chat Input Box */
-    .stChatInputContainer {
-        background: rgba(15, 23, 42, 0.9) !important;
-        border: 1px solid rgba(129, 140, 248, 0.5) !important;
-        border-radius: 14px !important;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-        padding: 5px;
     }
     
     /* Styled Alert Boxes */
@@ -121,12 +135,12 @@ st.markdown("""
         border-radius: 12px;
         backdrop-filter: blur(5px);
     }
-    div[data-testid="stAlert"]:has(.st-emotion-cache-1n7c1ee) { /* Success box */
+    div[data-testid="stAlert"]:has(.st-emotion-cache-1n7c1ee) {
         background-color: rgba(16, 185, 129, 0.1);
         border-left: 4px solid #10b981;
         color: #d1fae5;
     }
-    div[data-testid="stAlert"]:has(.st-emotion-cache-121r7m3) { /* Info box */
+    div[data-testid="stAlert"]:has(.st-emotion-cache-121r7m3) {
         background-color: rgba(56, 189, 248, 0.1);
         border-left: 4px solid #38bdf8;
         color: #e0f2fe;
