@@ -33,6 +33,69 @@ def get_model():
 
 # --- 3. APP UI SETUP ---
 st.set_page_config(page_title="Brain Tumor AI", layout="wide")
+
+# --- CUSTOM DEVELOPER DARK MODE CSS ---
+st.markdown("""
+<style>
+    /* Main background */
+    .stApp {
+        background-color: #0d1117;
+        color: #f0f6fc;
+    }
+    
+    /* Sleek developer buttons */
+    div.stButton > button:first-child {
+        background-color: #161b22;
+        color: #a855f7;
+        border: 1px solid #30363d;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        transition: all 0.3s ease-in-out;
+    }
+    
+    /* Button Hover State */
+    div.stButton > button:first-child:hover {
+        background-color: #a855f7;
+        color: #ffffff;
+        border: 1px solid #a855f7;
+        box-shadow: 0px 4px 6px rgba(168, 85, 247, 0.2);
+    }
+    
+    /* Chat input box styling */
+    .stChatInputContainer {
+        border-radius: 0.375rem;
+        border: 1px solid #30363d !important;
+        background-color: #161b22 !important;
+    }
+
+    /* Expander styling (How AI made its decision) */
+    .streamlit-expanderHeader {
+        background-color: #161b22;
+        border-radius: 0.375rem;
+        color: #a855f7 !important;
+        font-weight: 600;
+        border: 1px solid #30363d;
+    }
+    
+    /* Headers (Light blue-white for readability) */
+    h1, h2, h3, h4, h5, h6 {
+        color: #f0f6fc !important;
+    }
+    
+    /* Highlighted text (GitHub blue) */
+    strong {
+        color: #58a6ff;
+    }
+    
+    /* Warning/Info boxes */
+    .stAlert {
+        border-radius: 0.375rem;
+        background-color: #161b22;
+        border: 1px solid #30363d;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("🧠 Brain Tumor Diagnostic Assistant with Explainable AI")
 
 st.markdown("""
