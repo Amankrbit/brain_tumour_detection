@@ -97,7 +97,7 @@ if uploaded_file:
         **Clinical Value:** This Explainable AI feature allows radiologists to verify that the model is looking at the actual tumor site rather than image artifacts (like skull markers or text).
         """) 
 
-  # --- 6. AI MEDICAL ASSISTANT CHATBOT (GROQ) ---
+    # --- 6. AI MEDICAL ASSISTANT CHATBOT (GROQ) ---
     st.markdown("---")
     st.markdown(f"### 💬 Ask the AI Assistant about {label}")
 
@@ -138,7 +138,6 @@ if uploaded_file:
         if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
             
             # --- PROMPT ENGINEERING MAGIC ---
-            # We explicitly order the AI to generate follow-up questions wrapped in secret tags
             system_context = f"""
             You are a highly professional neuro-oncology AI assistant. 
             The patient's MRI scan was just analyzed by our DenseNet deep learning model and the diagnosis is: {label} with a confidence of {conf:.2f}%.
@@ -200,4 +199,3 @@ if uploaded_file:
             if prompt := st.chat_input("Or type your own question here..."):
                 st.session_state.messages.append({"role": "user", "content": prompt})
                 st.rerun()
-                    st.error(f"Chatbot encountered an error: {e}")
