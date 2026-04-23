@@ -153,7 +153,7 @@ if uploaded_file:
                 try:
                     with st.spinner("Thinking..."):
                         response = client.chat.completions.create(
-                            model="llama3-8b-8192",
+                            model="llama-3.1-8b-instant",
                             messages=api_messages,
                             stream=False
                         )
