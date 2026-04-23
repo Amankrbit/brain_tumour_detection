@@ -5,6 +5,7 @@ import cv2
 import streamlit as st
 import tensorflow as tf
 from PIL import Image
+from groq import Groq  # Make sure 'groq' is in your requirements.txt
 
 # --- 1. SYSTEM PATH SETUP ---
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -20,11 +21,10 @@ from src.metrics import make_gradcam_heatmap, generate_gradcam_overlay
 # --- 2. FAIL-PROOF MODEL DOWNLOADER ---
 @st.cache_resource
 def get_model():
-    # REPLACE THIS with the link you copied from GitHub Releases in Step 1!
+    # REPLACE THIS with the link you copied from GitHub Releases
     model_url = "https://github.com/Amankrbit/brain_tumour_detection/releases/download/v1.0/advanced_densenet.keras"
     
     with st.spinner("Downloading AI Model... This only happens on the first run."):
-        # tf.keras.utils.get_file handles the /tmp folder and downloading safely!
         model_path = tf.keras.utils.get_file(
             "advanced_densenet.keras",
             origin=model_url
@@ -68,6 +68,10 @@ if uploaded_file:
         # Get results
         idx = np.argmax(predictions)
         label = CLASS_NAMES[idx].capitalize()
+        # Fix formatting for 'No_tumor' to read cleanly
+        if label == "No_tumor":
+            label = "No Tumor"
+            
         conf = predictions[idx] * 100
         
         # Generate Grad-CAM Overlay
@@ -84,7 +88,6 @@ if uploaded_file:
     st.success(f"**Diagnosis:** {label} | **Confidence:** {conf:.2f}%")
 
     # --- 5. EXPLAINABLE AI SECTION ---
-    st.markdown("---")
     with st.expander("🔍 How did the AI make this decision? (Explainable AI)"):
         st.write("""
         This diagnostic tool uses **Grad-CAM** (Gradient-weighted Class Activation Mapping) to provide transparency into the neural network's decision-making process.
@@ -94,4 +97,82 @@ if uploaded_file:
         * 🔵 **Blue Regions:** Low importance. The AI ignored these areas.
         
         **Clinical Value:** This Explainable AI feature allows radiologists to verify that the model is looking at the actual tumor site rather than image artifacts (like skull markers or text).
-        """)
+        """) 
+
+    # --- 6. AI MEDICAL ASSISTANT CHATBOT (GROQ) ---
+    st.markdown("---")
+    st.markdown(f"### 💬 Ask the AI Assistant about {label}")
+    
+    # 6a. Dynamic Suggested Questions based on the label
+    st.markdown("**💡 Not sure what to ask? Try one of these:**")
+    
+    if label == "Glioma":
+        st.info("• What exactly is a Glioma?\n• What are the standard treatment options for this type of tumor?\n• How fast do Gliomas typically grow?")
+    elif label == "Meningioma":
+        st.info("• Are Meningiomas usually benign or malignant?\n• Will a Meningioma always require brain surgery?\n• What are the common symptoms associated with this tumor?")
+    elif label == "Pituitary":
+        st.info("• How does a Pituitary tumor affect the body's hormones?\n• What non-surgical treatments exist for Pituitary tumors?\n• Can this type of tumor cause vision problems?")
+    else: # No Tumor
+        st.info("• If my MRI is clear, what else could be causing my headaches?\n• Should I still follow up with a neurologist?\n• How reliable is this AI at detecting early-stage tumors?")
+
+    # 6b. Initialize the Groq client securely using Streamlit Secrets
+    try:
+        client = Groq(api_key=st.secrets["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"])
+    except Exception as e:
+        st.warning("Please add your GROQ_API_KEY to the Streamlit Secrets to enable the chatbot.")
+        client = None
+
+    if client:
+        # Initialize chat history in Streamlit's session state
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
+
+        # Display previous chat history
+        for message in st.session_state.messages:
+            # We don't want to display the hidden system prompt to the user
+            if message["role"] != "system":
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+
+        # Accept user input
+        if prompt := st.chat_input("Type your question here..."):
+            
+            # Display user message in chat message container
+            with st.chat_message("user"):
+                st.markdown(prompt)
+            
+            # Add user message to chat history
+            st.session_state.messages.append({"role": "user", "content": prompt})
+
+            # Inject the DenseNet prediction context behind the scenes
+            system_context = f"""
+            You are a highly professional neuro-oncology AI assistant. 
+            The patient's MRI scan was just analyzed by our DenseNet deep learning model and the diagnosis is: {label} with a confidence of {conf:.2f}%.
+            Answer the user's questions accurately, empathetically, and concisely based on this specific diagnosis.
+            If the user asks about the reliability of the AI, explain that while it is highly accurate, it is a supportive tool.
+            Always include a brief disclaimer to consult a certified neurologist or oncologist for definitive medical advice.
+            """
+            
+            # Prepare the full message payload for Groq
+            api_messages = [{"role": "system", "content": system_context}] + st.session_state.messages
+
+            # Request the answer from Groq
+            with st.chat_message("assistant"):
+                message_placeholder = st.empty()
+                
+                try:
+                    with st.spinner("Thinking..."):
+                        response = client.chat.completions.create(
+                            model="llama3-8b-8192",
+                            messages=api_messages,
+                            stream=False
+                        )
+                    
+                    assistant_response = response.choices[0].message.content
+                    message_placeholder.markdown(assistant_response)
+                    
+                    # Save the AI's response to history
+                    st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+                    
+                except Exception as e:
+                    st.error(f"Chatbot encountered an error: {e}")
