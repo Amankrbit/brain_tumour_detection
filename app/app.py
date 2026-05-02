@@ -31,59 +31,48 @@ def get_model():
         
     return load_trained_model(model_path)
 
-# --- BOUNDING BOX GENERATOR ---
+# --- 3. BOUNDING BOX GENERATOR ---
 def draw_tumor_bounding_box(image, heatmap, threshold=160):
     """
     Finds the hottest region of the Grad-CAM heatmap and draws a bounding box around it.
     """
-    # 1. Resize the raw heatmap to perfectly match the original image size
+    # Resize the raw heatmap to perfectly match the original image size
     heatmap_resized = cv2.resize(heatmap, (image.shape[1], image.shape[0]))
     
-    # 2. Ensure the heatmap is in the 0-255 range
+    # Ensure the heatmap is in the 0-255 range
     if heatmap_resized.dtype != np.uint8:
         heatmap_resized = np.uint8(255 * heatmap_resized)
         
-    # 3. Threshold the heatmap: Keep only the hottest areas (values > threshold)
+    # Threshold the heatmap: Keep only the hottest areas
     _, thresh = cv2.threshold(heatmap_resized, threshold, 255, cv2.THRESH_BINARY)
     
-    # 4. Find the contours (shapes) of these hot spots
+    # Find the contours
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
-    # 5. Create a copy of the original image to draw on
     img_with_box = np.copy(image)
     
     if contours:
-        # 6. Find the largest hot spot area to ignore random noise
+        # Find the largest hot spot area to ignore random noise
         largest_contour = max(contours, key=cv2.contourArea)
-        
-        # 7. Get the exact x, y, width, and height coordinates
         x, y, w, h = cv2.boundingRect(largest_contour)
         
-        # 8. Draw a sleek Cyan bounding box (BGR format)
+        # Draw a sleek Cyan bounding box
         cv2.rectangle(img_with_box, (x, y), (x + w, y + h), (255, 255, 0), 2)
-        
-        # Add a high-tech label above the box
         cv2.putText(img_with_box, "AI Detected Region", (x, y - 8), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 2)
                     
     return img_with_box
 
-# --- 3. APP UI & PRO CSS SETUP ---
+# --- 4. APP UI & PRO CSS SETUP ---
 st.set_page_config(page_title="Brain Tumor AI", layout="wide", initial_sidebar_state="collapsed")
 
-# 🎨 THE CYBER-MEDICAL GLASSMORPHISM THEME 🎨
 st.markdown("""
 <style>
-    /* Deep gradient background */
     .stApp {
         background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
         color: #e2e8f0;
     }
-    
-    /* Hide top header bar for a cleaner app feel */
     header {visibility: hidden;}
-    
-    /* Premium Gradient Title */
     h1 {
         background: -webkit-linear-gradient(45deg, #38bdf8, #818cf8);
         -webkit-background-clip: text;
@@ -93,8 +82,6 @@ st.markdown("""
         padding-bottom: 10px;
     }
     h2, h3 { color: #f8fafc !important; font-weight: 600 !important; }
-    
-    /* Floating Image Cards */
     [data-testid="stImage"] {
         border-radius: 12px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -105,10 +92,6 @@ st.markdown("""
     [data-testid="stImage"]:hover {
         transform: scale(1.02);
     }
-    
-    /* ---------------------------------------------------
-       CHAT BUBBLE FIX: Force all text inside to be bright white
-       --------------------------------------------------- */
     [data-testid="stChatMessage"] {
         background-color: rgba(30, 41, 59, 0.5) !important;
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
@@ -118,14 +101,10 @@ st.markdown("""
         margin-bottom: 10px !important;
     }
     [data-testid="stChatMessage"] * {
-        color: #ffffff !important; /* Forces AI text and bullet points to be white */
+        color: #ffffff !important; 
     }
-    
-    /* ---------------------------------------------------
-       CHAT INPUT FIX: Remove the ugly white box at the bottom
-       --------------------------------------------------- */
     [data-testid="stBottom"] > div {
-        background: transparent !important; /* Removes the white sticky block */
+        background: transparent !important; 
     }
     [data-testid="stChatInput"] {
         background: rgba(15, 23, 42, 0.9) !important;
@@ -134,14 +113,12 @@ st.markdown("""
         box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
     }
     [data-testid="stChatInput"] textarea {
-        color: #ffffff !important; /* White typing text */
-        caret-color: #38bdf8 !important; /* Cyan cursor */
+        color: #ffffff !important; 
+        caret-color: #38bdf8 !important; 
     }
     [data-testid="stChatInputSubmit"] svg {
-        fill: #38bdf8 !important; /* Make the send arrow cyan */
+        fill: #38bdf8 !important; 
     }
-    
-    /* Futuristic Neon Buttons */
     div[data-testid="stButton"] > button {
         background: rgba(15, 23, 42, 0.6) !important;
         color: #38bdf8 !important;
@@ -166,8 +143,6 @@ st.markdown("""
     div[data-testid="stButton"] > button:hover p {
         color: #ffffff !important; 
     }
-    
-    /* Styled Alert Boxes */
     .stAlert {
         border-radius: 12px;
         backdrop-filter: blur(5px);
@@ -182,8 +157,6 @@ st.markdown("""
         border-left: 4px solid #38bdf8;
         color: #e0f2fe;
     }
-
-    /* Expander Styling */
     .streamlit-expanderHeader {
         background: rgba(30, 41, 59, 0.4);
         border-radius: 12px;
@@ -194,8 +167,6 @@ st.markdown("""
         border-radius: 12px;
         background: rgba(15, 23, 42, 0.3);
     }
-    
-    /* Neon highlights for bold text */
     strong {
         color: #38bdf8;
         text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
@@ -205,9 +176,12 @@ st.markdown("""
 
 st.title("🧠 Brain Tumor AI Diagnostics")
 
-st.markdown("""
-Upload a Brain MRI scan. The AI will classify the tumor type and generate a **Grad-CAM heatmap** to highlight the specific region of the brain that influenced its decision.
+# --- STRICT CLINICAL DISCLAIMER ---
+st.warning("""
+**STRICT CLINICAL DISCLAIMER:** This application is an experimental AI tool designed for educational and preliminary screening purposes only. It is **NOT** a substitute for professional medical advice, diagnosis, or treatment. The AI's classifications and heatmaps are mathematical predictions, not medical facts. Always consult with a certified neurologist or oncologist regarding any medical conditions or before making any healthcare decisions. Do not ignore professional medical advice because of something you have read or seen on this application.
 """)
+
+st.markdown("Upload a Brain MRI scan. The AI will classify the tumor type and generate a **Grad-CAM heatmap** and **Bounding Box** to highlight the specific region of the brain that influenced its decision.")
 
 # Load the model
 try:
@@ -217,7 +191,7 @@ except Exception as e:
     st.error(f"Failed to load model: {e}")
     st.stop()
 
-# --- 4. IMAGE PROCESSING ---
+# --- 5. IMAGE PROCESSING ---
 uploaded_file = st.file_uploader("Upload MRI Scan", type=["jpg", "png", "jpeg"])
 
 if uploaded_file:
@@ -225,7 +199,6 @@ if uploaded_file:
     img = cv2.imdecode(file_bytes, 1)
     
     st.markdown("### Analysis Results")
-    # UPDATED: Now using 4 columns to fit the bounding box!
     col1, col2, col3, col4 = st.columns(4)
     
     with st.spinner("Analyzing scan..."):
@@ -243,10 +216,8 @@ if uploaded_file:
             
         conf = predictions[idx] * 100
         
-        # Generate Grad-CAM Overlay
+        # Generate Overlays
         overlay = generate_gradcam_overlay(processed_img, heatmap)
-        
-        # Generate Bounding Box Image
         bbox_image = draw_tumor_bounding_box(processed_img, heatmap, threshold=160)
 
     # Display Results in 4 Columns
@@ -261,7 +232,7 @@ if uploaded_file:
 
     st.success(f"**Diagnosis:** {label} | **Confidence:** {conf:.2f}%")
 
-    # --- 5. EXPLAINABLE AI SECTION ---
+    # --- 6. EXPLAINABLE AI SECTION ---
     with st.expander("🔍 How did the AI make this decision? (Explainable AI)"):
         st.write("""
         This diagnostic tool uses **Grad-CAM** (Gradient-weighted Class Activation Mapping) to provide transparency into the neural network's decision-making process.
@@ -273,11 +244,10 @@ if uploaded_file:
         **Clinical Value:** This Explainable AI feature allows radiologists to verify that the model is looking at the actual tumor site rather than image artifacts.
         """) 
 
-    # --- 6. AI MEDICAL ASSISTANT CHATBOT (GROQ) ---
+    # --- 7. AI MEDICAL ASSISTANT CHATBOT (GROQ) ---
     st.markdown("---")
     st.markdown(f"### 💬 AI Clinical Assistant")
 
-    # Initialize the Groq client securely
     try:
         if "GROQ_API_KEY" not in st.secrets:
             st.error("🚨 Error: Streamlit cannot find 'GROQ_API_KEY' in your secrets.")
@@ -289,12 +259,10 @@ if uploaded_file:
         client = None
 
     if client:
-        # 1. Initialize states for infinite memory and continuous suggestions
         if "messages" not in st.session_state:
             st.session_state.messages = []
             
         if "suggestions" not in st.session_state:
-            # Seed the VERY FIRST set of questions based on the MRI diagnosis
             if label == "Glioma":
                 st.session_state.suggestions = ["What exactly is a Glioma?", "What are the standard treatment options?", "How fast do Gliomas typically grow?"]
             elif label == "Meningioma":
@@ -304,20 +272,18 @@ if uploaded_file:
             else: 
                 st.session_state.suggestions = ["If my MRI is clear, what else could be causing my headaches?", "Should I still follow up with a neurologist?", "How reliable is this AI at detecting early-stage tumors?"]
 
-        # 2. Display previous chat history
         for message in st.session_state.messages:
             if message["role"] != "system":
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
 
-        # 3. Check if it's the AI's turn to respond
         if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
             
-            # --- PROMPT ENGINEERING MAGIC ---
             system_context = f"""
             You are a highly professional neuro-oncology AI assistant. 
             The patient's MRI scan was just analyzed by our DenseNet deep learning model and the diagnosis is: {label} with a confidence of {conf:.2f}%.
             Answer the user's questions accurately, empathetically, and concisely based on this specific diagnosis.
+            Remind the user gently in your first response that you are an AI assistant and they should consult their doctor.
             
             CRITICAL INSTRUCTION: At the very end of your response, you MUST generate 3 highly relevant follow-up questions the user might want to ask next based on your answer. 
             Wrap these 3 questions in a <suggestions> tag and separate them with a pipeline character (|). 
@@ -339,18 +305,16 @@ if uploaded_file:
                     
                     raw_response = response.choices[0].message.content
                     
-                    # Parse the secret suggestions out of the AI's response using Python
                     if "<suggestions>" in raw_response and "</suggestions>" in raw_response:
                         display_text = raw_response.split("<suggestions>")[0].strip()
                         sugg_text = raw_response.split("<suggestions>")[1].split("</suggestions>")[0]
                         new_suggestions = [s.strip() for s in sugg_text.split("|") if s.strip()]
                     else:
                         display_text = raw_response
-                        new_suggestions = [] # Fallback if AI forgets
+                        new_suggestions = []
                         
                     message_placeholder.markdown(display_text)
                     
-                    # Update memory and trigger a UI refresh!
                     st.session_state.messages.append({"role": "assistant", "content": display_text})
                     st.session_state.suggestions = new_suggestions
                     st.rerun() 
@@ -358,19 +322,15 @@ if uploaded_file:
                 except Exception as e:
                     st.error(f"Chatbot encountered an error: {e}")
 
-        # 4. Display the clickable buttons and text input (Waiting for user)
         if not st.session_state.messages or st.session_state.messages[-1]["role"] == "assistant":
             
-            # Render the continuous dynamic buttons
             if st.session_state.suggestions:
                 st.markdown("**💡 Suggested Inquiries:**")
-                # Create columns so the buttons sit nicely side-by-side if there's room
                 for i, sugg in enumerate(st.session_state.suggestions):
                     if st.button(sugg, key=f"btn_{len(st.session_state.messages)}_{i}", use_container_width=True):
                         st.session_state.messages.append({"role": "user", "content": sugg})
                         st.rerun()
             
-            # Allow the user to ignore the buttons and type manually
             if prompt := st.chat_input("Or type your own medical inquiry here..."):
                 st.session_state.messages.append({"role": "user", "content": prompt})
                 st.rerun()
