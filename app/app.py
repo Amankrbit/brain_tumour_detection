@@ -31,6 +31,43 @@ def get_model():
         
     return load_trained_model(model_path)
 
+# --- BOUNDING BOX GENERATOR ---
+def draw_tumor_bounding_box(image, heatmap, threshold=160):
+    """
+    Finds the hottest region of the Grad-CAM heatmap and draws a bounding box around it.
+    """
+    # 1. Resize the raw heatmap to perfectly match the original image size
+    heatmap_resized = cv2.resize(heatmap, (image.shape[1], image.shape[0]))
+    
+    # 2. Ensure the heatmap is in the 0-255 range
+    if heatmap_resized.dtype != np.uint8:
+        heatmap_resized = np.uint8(255 * heatmap_resized)
+        
+    # 3. Threshold the heatmap: Keep only the hottest areas (values > threshold)
+    _, thresh = cv2.threshold(heatmap_resized, threshold, 255, cv2.THRESH_BINARY)
+    
+    # 4. Find the contours (shapes) of these hot spots
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    # 5. Create a copy of the original image to draw on
+    img_with_box = np.copy(image)
+    
+    if contours:
+        # 6. Find the largest hot spot area to ignore random noise
+        largest_contour = max(contours, key=cv2.contourArea)
+        
+        # 7. Get the exact x, y, width, and height coordinates
+        x, y, w, h = cv2.boundingRect(largest_contour)
+        
+        # 8. Draw a sleek Cyan bounding box (BGR format)
+        cv2.rectangle(img_with_box, (x, y), (x + w, y + h), (255, 255, 0), 2)
+        
+        # Add a high-tech label above the box
+        cv2.putText(img_with_box, "AI Detected Region", (x, y - 8), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 2)
+                    
+    return img_with_box
+
 # --- 3. APP UI & PRO CSS SETUP ---
 st.set_page_config(page_title="Brain Tumor AI", layout="wide", initial_sidebar_state="collapsed")
 
@@ -188,7 +225,8 @@ if uploaded_file:
     img = cv2.imdecode(file_bytes, 1)
     
     st.markdown("### Analysis Results")
-    col1, col2, col3 = st.columns(3)
+    # UPDATED: Now using 4 columns to fit the bounding box!
+    col1, col2, col3, col4 = st.columns(4)
     
     with st.spinner("Analyzing scan..."):
         # Preprocess
@@ -207,14 +245,19 @@ if uploaded_file:
         
         # Generate Grad-CAM Overlay
         overlay = generate_gradcam_overlay(processed_img, heatmap)
+        
+        # Generate Bounding Box Image
+        bbox_image = draw_tumor_bounding_box(processed_img, heatmap, threshold=160)
 
-    # Display Results
+    # Display Results in 4 Columns
     with col1:
         st.image(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), caption="Original MRI", use_container_width=True)
     with col2:
-        st.image(cv2.cvtColor(processed_img, cv2.COLOR_BGR2RGB), caption="Preprocessed (Cropped)", use_container_width=True)
+        st.image(cv2.cvtColor(processed_img, cv2.COLOR_BGR2RGB), caption="Preprocessed", use_container_width=True)
     with col3:
-        st.image(overlay, caption="Grad-CAM Explainability", use_container_width=True)
+        st.image(overlay, caption="Grad-CAM Heatmap", use_container_width=True)
+    with col4:
+        st.image(cv2.cvtColor(bbox_image, cv2.COLOR_BGR2RGB), caption="AI Bounding Box", use_container_width=True)
 
     st.success(f"**Diagnosis:** {label} | **Confidence:** {conf:.2f}%")
 
